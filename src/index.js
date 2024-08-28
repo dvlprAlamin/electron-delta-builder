@@ -12,9 +12,6 @@ const macOSBinaries = [
   path.join(__dirname, './mac-updater-binaries/mac-updater'),
 ];
 
-const windowsDone = false;
-const macDone = false;
-
 const getLatestReleaseInfo = ({ artifactPaths, platform, target }) => {
   const latestReleaseFilePath = artifactPaths.filter((d) => {
     if (platform === 'win' && target === 'nsis' && !d.includes('nsis-web')) {

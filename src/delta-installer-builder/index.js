@@ -1,14 +1,14 @@
 /* eslint-disable no-nested-ternary */
-const fs = require("fs-extra");
-const path = require("path");
-const envPaths = require("env-paths");
-const { extract7zip } = require("../utils");
+const fs = require('fs-extra');
+const path = require('path');
+const envPaths = require('env-paths');
+const { extract7zip } = require('../utils');
 
-const { downloadFile, safeSpawn } = require("../utils");
+const { downloadFile, safeSpawn } = require('../utils');
 
 const defaultOptions = {
   logger: console,
-  nsisURL: "https://github.com/electron-delta/nsis.zip/raw/main/nsis.zip",
+  nsisURL: 'https://github.com/electron-delta/nsis.zip/raw/main/nsis.zip',
 };
 
 class DeltaInstallerBuilder {
@@ -30,43 +30,42 @@ class DeltaInstallerBuilder {
   }
 
   async getNSISPath() {
-    const paths = envPaths("electron-delta-bins");
-    const deltaBinsDir =
-      process.platform === "win32"
-        ? path.join(process.env.APPDATA, "electron-delta-bins")
-        : paths.data;
-    const nsisRootPath = path.join(deltaBinsDir, "nsis-3.0.5.0");
+    const paths = envPaths('electron-delta-bins');
+    const deltaBinsDir = process.platform === 'win32'
+      ? path.join(process.env.APPDATA, 'electron-delta-bins')
+      : paths.data;
+    const nsisRootPath = path.join(deltaBinsDir, 'nsis-3.0.5.0');
     const makeNSISPath = path.join(
       nsisRootPath,
-      process.platform === "darwin"
-        ? "mac"
-        : process.platform === "win32"
-        ? "Bin"
-        : "linux",
-      process.platform === "win32" ? "makensis.exe" : "makensis"
+      process.platform === 'darwin'
+        ? 'mac'
+        : process.platform === 'win32'
+          ? 'Bin'
+          : 'linux',
+      process.platform === 'win32' ? 'makensis.exe' : 'makensis',
     );
 
     if (fs.existsSync(makeNSISPath)) {
-      this.logger.log("Cache exists: ", makeNSISPath);
+      this.logger.log('Cache exists: ', makeNSISPath);
       return { makeNSISPath, nsisRootPath };
     }
 
     await fs.ensureDir(deltaBinsDir);
 
-    this.logger.log("Start downloading from", this.options.nsisURL);
+    this.logger.log('Start downloading from', this.options.nsisURL);
 
     const filePath = await downloadFile(
       this.options.nsisURL,
-      path.join(deltaBinsDir, "nsis.zip")
+      path.join(deltaBinsDir, 'nsis.zip'),
     );
 
-    this.logger.log("Downloaded ", filePath);
+    this.logger.log('Downloaded ', filePath);
     await extract7zip(filePath, deltaBinsDir);
     return { makeNSISPath, nsisRootPath };
   }
 
   static getNSISScript() {
-    return path.resolve(path.join(__dirname, "./nsis/installer.nsi"));
+    return path.resolve(path.join(__dirname, './nsis/installer.nsi'));
   }
 
   getNSISArgs() {
@@ -83,13 +82,13 @@ class DeltaInstallerBuilder {
     const { makeNSISPath, nsisRootPath } = await this.getNSISPath();
     args.push(this.installerNSIPath);
 
-    this.logger.log("NSIS args ", args);
+    this.logger.log('NSIS args ', args);
     try {
-      this.logger.log("Compiling with makensis ", this.installerNSIPath);
+      this.logger.log('Compiling with makensis ', this.installerNSIPath);
       await safeSpawn(makeNSISPath, args, {
         cwd: path.dirname(this.installerNSIPath),
         env: { ...process.env, NSISDIR: nsisRootPath },
-        stdio: "inherit",
+        stdio: 'inherit',
       });
       return true;
     } catch (err) {
@@ -124,7 +123,7 @@ class DeltaInstallerBuilder {
       return null;
     }
 
-    this.logger.log("EXE created: ", installerOutputPath);
+    this.logger.log('EXE created: ', installerOutputPath);
     return installerOutputPath;
   }
 }
