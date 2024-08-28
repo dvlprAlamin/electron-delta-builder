@@ -11,12 +11,37 @@ import {
   fileNameFromUrl,
 } from './utils';
 
-const preparePreviousReleases = (previousReleases) => previousReleases.map((release) => {
-  const { url } = release;
-  const version = semverClean(release.version);
-  const fileName = fileNameFromUrl(url);
-  return { url, version, fileName };
-});
+interface Release {
+  url: string;
+  version: string;
+}
+
+interface CreateAllDeltasOptions {
+  platform: string;
+  outDir: string;
+  logger: Console;
+  cacheDir: string;
+  target: string;
+  getPreviousReleases: (options: {
+    platform: string;
+    target: string;
+  }) => Promise<Release[]>;
+  sign: (filePath: string) => void;
+  productIconPath: string;
+  productName: string;
+  processName: string;
+  latestReleaseFilePath: string;
+  latestReleaseFileName: string;
+  latestVersion: string;
+}
+
+const preparePreviousReleases = (previousReleases: Release[]) =>
+  previousReleases.map((release) => {
+    const { url } = release;
+    const version = semverClean(release.version) as string;
+    const fileName = fileNameFromUrl(url);
+    return { url, version, fileName };
+  });
 
 const createAllDeltas = async ({
   platform,
@@ -32,14 +57,14 @@ const createAllDeltas = async ({
   latestReleaseFilePath,
   latestReleaseFileName,
   latestVersion,
-}) => {
+}: CreateAllDeltasOptions): Promise<string[] | null> => {
   const dataDir = path.join(cacheDir, './data');
   const deltaDir = path.join(cacheDir, './deltas');
   fs.ensureDirSync(cacheDir);
   fs.ensureDirSync(dataDir);
   fs.ensureDirSync(deltaDir);
 
-  let allReleases = [];
+  let allReleases: Release[] = [];
   try {
     allReleases = await getPreviousReleases({
       platform,
@@ -54,7 +79,7 @@ const createAllDeltas = async ({
     return null;
   }
 
-  // last 10 releases only
+  // Last 10 releases only
   allReleases = allReleases.slice(0, 10);
 
   logger.log('Current release info ', {
@@ -70,18 +95,25 @@ const createAllDeltas = async ({
 
   const previousReleases = preparePreviousReleases(allReleases);
 
-  // download all the installers
+  // Download all the installers
   for (const { url, fileName } of previousReleases) {
     const filePath = path.join(dataDir, fileName);
     logger.log('Downloading file ', filePath, ' from ', url);
     await downloadFileIfNotExists(url, filePath);
   }
 
-  // extract the installers
+  // Extract the installers
   for (const { fileName, version } of previousReleases) {
     const extractedDir = path.join(dataDir, version);
     const filePath = path.join(dataDir, fileName);
-    if (!fs.existsSync(path.join(extractedDir, `${processName}${platform === 'mac' ? '.app' : '.exe'}`))) {
+    if (
+      !fs.existsSync(
+        path.join(
+          extractedDir,
+          `${processName}${platform === 'mac' ? '.app' : '.exe'}`
+        )
+      )
+    ) {
       fs.ensureDirSync(extractedDir);
       fs.emptyDirSync(extractedDir);
       await extract7zip(filePath, extractedDir);
@@ -89,8 +121,7 @@ const createAllDeltas = async ({
   }
 
   const latestReleaseDir = path.join(dataDir, latestVersion);
-  // extract the latest release
-
+  // Extract the latest release
   await extract7zip(latestReleaseFilePath, latestReleaseDir);
   const outputDir = path.join(outDir, `${latestVersion}-${platform}-deltas`);
 
@@ -98,35 +129,39 @@ const createAllDeltas = async ({
   await fs.ensureDir(outputDir);
   await fs.emptyDir(outputDir);
 
-  // compute the delta between any two versions
+  // Compute the delta between any two versions
   for (const { version } of previousReleases) {
     const deltaFileName = `${productName}-${version}-to-${latestVersion}.delta`;
     const deltaFilePath = path.join(deltaDir, deltaFileName);
     logger.log(`Creating delta for ${version}`);
 
-    const oldDir = platform === 'win' ? path.join(dataDir, version) : path.join(dataDir, version, `${productName}.app`);
-    const newDir = platform === 'win' ? latestReleaseDir : path.join(latestReleaseDir, `${productName}.app`);
+    const oldDir =
+      platform === 'win'
+        ? path.join(dataDir, version)
+        : path.join(dataDir, version, `${productName}.app`);
+    const newDir =
+      platform === 'win'
+        ? latestReleaseDir
+        : path.join(latestReleaseDir, `${productName}.app`);
     logger.debug(`Creating delta for ${version} from ${oldDir} to ${newDir}`);
-    createDelta(
-      oldDir,
-      newDir,
-      deltaFilePath,
-    );
+    createDelta(oldDir, newDir, deltaFilePath);
     logger.log('Delta file created ', deltaFilePath);
   }
 
   if (platform === 'win') {
-    const deltaJSON = {
+    const deltaJSON: Record<string, any> = {
       productName,
       latestVersion,
     };
 
-    // create the installer and sign it
+    // Create the installer and sign it
     for (const { version } of previousReleases) {
       const deltaFileName = `${productName}-${version}-to-${latestVersion}.delta`;
       const deltaFilePath = path.resolve(path.join(deltaDir, deltaFileName));
       const installerFileName = `${productName}-${version}-to-${latestVersion}-delta.exe`;
-      const installerOutputPath = path.resolve(path.join(outputDir, installerFileName));
+      const installerOutputPath = path.resolve(
+        path.join(outputDir, installerFileName)
+      );
       console.log(`Creating delta installer for ${version}`);
       await deltaInstallerBuilder.build({
         installerOutputPath,
@@ -140,7 +175,7 @@ const createAllDeltas = async ({
       deltaJSON[version] = { path: installerFileName };
     }
 
-    // checksum computaion
+    // Compute checksum
     for (const { version } of previousReleases) {
       const installerFileName = `${productName}-${version}-to-${latestVersion}-delta.exe`;
       const installerOutputPath = path.join(outputDir, installerFileName);
@@ -154,13 +189,12 @@ const createAllDeltas = async ({
     fs.writeFileSync(deltaJSONPath, JSON.stringify(deltaJSON, null, 2));
   } else {
     // mac
-    const deltaJSON = {
+    const deltaJSON: Record<string, any> = {
       productName,
       latestVersion,
     };
 
-    // move deltas
-
+    // Move deltas
     for (const { version } of previousReleases) {
       const deltaFileName = `${productName}-${version}-to-${latestVersion}.delta`;
       const deltaFilePath = path.resolve(path.join(deltaDir, deltaFileName));
@@ -172,7 +206,7 @@ const createAllDeltas = async ({
       deltaJSON[version] = { path: deltaFileName };
     }
 
-    // checksum computaion
+    // Compute checksum
     for (const { version } of previousReleases) {
       const deltaFileName = `${productName}-${version}-to-${latestVersion}.delta`;
       const deltaFilePath = path.resolve(path.join(outputDir, deltaFileName));
@@ -185,6 +219,7 @@ const createAllDeltas = async ({
     const deltaJSONPath = path.join(outputDir, `delta-${platform}.json`);
     fs.writeFileSync(deltaJSONPath, JSON.stringify(deltaJSON, null, 2));
   }
+
   return fs
     .readdirSync(outputDir)
     .map((fileName) => path.join(outputDir, fileName));

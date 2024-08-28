@@ -1,16 +1,33 @@
 /* eslint-disable no-nested-ternary */
-import fs from "fs-extra";
-import path from "path";
-import envPaths from "env-paths";
-import { downloadFile, safeSpawn, extract7zip } from "../utils"
+import fs from 'fs-extra';
+import path from 'path';
+import envPaths from 'env-paths';
+import { downloadFile, safeSpawn, extract7zip } from '../utils';
 
-const defaultOptions = {
+interface DeltaInstallerBuilderOptions {
+  logger?: Console;
+  nsisURL?: string;
+  APP_GUID?: string;
+  PRODUCT_NAME?: string;
+  PROCESS_NAME?: string;
+}
+
+interface NSISPath {
+  makeNSISPath: string;
+  nsisRootPath: string;
+}
+
+const defaultOptions: DeltaInstallerBuilderOptions = {
   logger: console,
   nsisURL: 'https://github.com/electron-delta/nsis.zip/raw/main/nsis.zip',
 };
 
 class DeltaInstallerBuilder {
-  constructor(options) {
+  private options: DeltaInstallerBuilderOptions;
+  private defines: { [key: string]: string | undefined };
+  private installerNSIPath!: string;
+
+  constructor(options: DeltaInstallerBuilderOptions = {}) {
     this.options = {
       ...defaultOptions,
       ...options,
@@ -23,24 +40,25 @@ class DeltaInstallerBuilder {
     };
   }
 
-  get logger() {
-    return this.options.logger;
+  private get logger() {
+    return this.options.logger || console;
   }
 
-  async getNSISPath() {
+  private async getNSISPath(): Promise<NSISPath> {
     const paths = envPaths('electron-delta-bins');
-    const deltaBinsDir = process.platform === 'win32'
-      ? path.join(process.env.APPDATA, 'electron-delta-bins')
-      : paths.data;
+    const deltaBinsDir =
+      process.platform === 'win32'
+        ? path.join(process.env.APPDATA || '', 'electron-delta-bins')
+        : paths.data;
     const nsisRootPath = path.join(deltaBinsDir, 'nsis-3.0.5.0');
     const makeNSISPath = path.join(
       nsisRootPath,
       process.platform === 'darwin'
         ? 'mac'
         : process.platform === 'win32'
-          ? 'Bin'
-          : 'linux',
-      process.platform === 'win32' ? 'makensis.exe' : 'makensis',
+        ? 'Bin'
+        : 'linux',
+      process.platform === 'win32' ? 'makensis.exe' : 'makensis'
     );
 
     if (fs.existsSync(makeNSISPath)) {
@@ -53,8 +71,8 @@ class DeltaInstallerBuilder {
     this.logger.log('Start downloading from', this.options.nsisURL);
 
     const filePath = await downloadFile(
-      this.options.nsisURL,
-      path.join(deltaBinsDir, 'nsis.zip'),
+      this.options.nsisURL || '',
+      path.join(deltaBinsDir, 'nsis.zip')
     );
 
     this.logger.log('Downloaded ', filePath);
@@ -62,20 +80,22 @@ class DeltaInstallerBuilder {
     return { makeNSISPath, nsisRootPath };
   }
 
-  static getNSISScript() {
+  private static getNSISScript(): string {
     return path.resolve(path.join(__dirname, './nsis/installer.nsi'));
   }
 
-  getNSISArgs() {
-    const args = [];
+  private getNSISArgs(): string[] {
+    const args: string[] = [];
     Object.keys(this.defines).forEach((key) => {
       const value = this.defines[key];
-      args.push(`-D${key}=${value}`);
+      if (value) {
+        args.push(`-D${key}=${value}`);
+      }
     });
     return args;
   }
 
-  async executeNSIS() {
+  private async executeNSIS(): Promise<boolean> {
     const args = this.getNSISArgs();
     const { makeNSISPath, nsisRootPath } = await this.getNSISPath();
     args.push(this.installerNSIPath);
@@ -95,22 +115,24 @@ class DeltaInstallerBuilder {
     }
   }
 
-  async build({
+  public async build({
     installerOutputPath,
     deltaFilePath,
     deltaFileName,
-    // newAppSize,
-    // newAppVersion,
     productIconPath,
-  }) {
+  }: {
+    installerOutputPath: string;
+    deltaFilePath: string;
+    deltaFileName: string;
+    productIconPath?: string;
+  }): Promise<string | null> {
     this.installerNSIPath = DeltaInstallerBuilder.getNSISScript();
 
     this.defines.INSTALLER_OUTPUT_PATH = installerOutputPath;
     this.defines.DELTA_FILE_PATH = deltaFilePath;
     this.defines.DELTA_FILE_NAME = deltaFileName;
-    // this.defines.NEW_APP_SIZE = newAppSize || 67540;
-    // this.defines.NEW_APP_VERSION = newAppVersion;
     this.defines.PRODUCT_ICON_PATH = productIconPath;
+
     let created = false;
     try {
       created = await this.executeNSIS();
@@ -126,4 +148,4 @@ class DeltaInstallerBuilder {
   }
 }
 
-export default DeltaInstallerBuilder
+export default DeltaInstallerBuilder;

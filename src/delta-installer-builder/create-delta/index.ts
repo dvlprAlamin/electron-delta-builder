@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary */
 import path from 'path';
 import { spawnSync } from 'child_process';
 
@@ -13,13 +12,14 @@ const hdiffz = path.join(
 );
 
 /**
+ * Creates a delta patch using the hdiffz tool.
  *
- * @param {string} oldDir The path to the old unpacked app
- * @param {string} newDir The path to the new unpacked app
- * @param {string} patchOut The expected of the created patch file
+ * @param oldDir - The path to the old unpacked app
+ * @param newDir - The path to the new unpacked app
+ * @param patchOut - The expected output path of the created patch file
+ * @returns A boolean indicating success or failure
  */
-
-const createDelta = (oldDir, newDir, patchOut) => {
+const createDelta = (oldDir: string, newDir: string, patchOut: string): boolean | null => {
   try {
     spawnSync(hdiffz, ['-f', '-c-lzma2', oldDir, newDir, patchOut], {
       stdio: 'inherit',
@@ -27,7 +27,7 @@ const createDelta = (oldDir, newDir, patchOut) => {
 
     return true;
   } catch (err) {
-    console.log('Compute hdiffz error ', err);
+    console.log('Compute hdiffz error', err);
     return null;
   }
 };
