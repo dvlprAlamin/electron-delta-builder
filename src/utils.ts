@@ -13,7 +13,11 @@ const pathTo7zip: string = sevenBin.path7za;
 
 const pipeline = promisify(stream.pipeline);
 
-function safeSpawn(exe: string, args: string[], options?: SpawnSyncOptions): Promise<boolean> {
+function safeSpawn(
+  exe: string,
+  args: string[],
+  options?: SpawnSyncOptions
+): Promise<boolean> {
   return new Promise((resolve, reject) => {
     try {
       spawnSync(exe, args, options);
@@ -32,11 +36,14 @@ const downloadFile = async (url: string, filePath: string): Promise<string> => {
     console.log(`Download completed ${filePath}`);
     return filePath;
   } catch (err) {
-    throw new Error(err.message);
+    throw new Error(JSON.stringify(err || '{}'));
   }
 };
 
-const downloadFileIfNotExists = async (url: string, filePath: string): Promise<string> => {
+const downloadFileIfNotExists = async (
+  url: string,
+  filePath: string
+): Promise<string> => {
   if (fs.existsSync(filePath)) {
     console.log('Cache exists: ', filePath);
     return filePath;
@@ -45,7 +52,10 @@ const downloadFileIfNotExists = async (url: string, filePath: string): Promise<s
   return downloadFile(url, filePath);
 };
 
-const extract7zip = (zipPath: string, extractedDir: string): Promise<string> => {
+const extract7zip = (
+  zipPath: string,
+  extractedDir: string
+): Promise<string> => {
   return new Promise((resolve, reject) => {
     console.log(`Extracting ${zipPath}`);
     console.log('Start extracting to ', extractedDir);
