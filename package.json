@@ -1,14 +1,15 @@
 {
-  "name": "@electron-delta/builder",
-  "version": "0.1.17",
+  "name": "@electron-delta-update/builder",
+  "version": "0.1.0",
   "description": "True delta updates for electronjs.",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "publish": "npm publish --access=public"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/electron-delta/electron-delta.git"
+    "url": "git+https://github.com/dvlprAlamin/electron-delta-builder.git"
   },
   "keywords": [
     "electron-delta-builder",
@@ -19,9 +20,9 @@
   "author": "Sandeep Acharya <i.am.sandeep.acharya@gmail.com>",
   "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/electron-delta/electron-delta/issues"
+    "url": "https://github.com/dvlprAlamin/electron-delta-builder/issues"
   },
-  "homepage": "https://github.com/electron-delta/electron-delta#readme",
+  "homepage": "https://github.com/dvlprAlamin/electron-delta-builder#readme",
   "dependencies": {
     "7zip-bin": "^5.2.0",
     "env-paths": "^2.2.1",
