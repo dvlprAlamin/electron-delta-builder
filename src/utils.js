@@ -1,14 +1,14 @@
 /* eslint-disable no-console */
-const stream = require('stream');
-const { promisify } = require('util');
-const got = require('got');
-const { spawnSync } = require('child_process');
-const fs = require('fs-extra');
-const crypto = require('crypto');
+import stream from 'stream';
+import { promisify } from 'util';
+import got from 'got';
+import { spawnSync } from 'child_process';
+import fs from 'fs-extra';
+import crypto from 'crypto';
+import sevenBin from '7zip-bin';
+import { extractFull } from 'node-7z';
+import path from 'path';
 
-const sevenBin = require('7zip-bin');
-const { extractFull } = require('node-7z');
-const path = require('path');
 
 const pathTo7zip = sevenBin.path7za;
 
@@ -86,7 +86,7 @@ function fileNameFromUrl(url) {
   return path.basename(url);
 }
 
-module.exports = {
+export default {
   downloadFile,
   safeSpawn,
   downloadFileIfNotExists,

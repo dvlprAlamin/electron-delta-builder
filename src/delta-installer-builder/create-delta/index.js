@@ -1,6 +1,6 @@
 /* eslint-disable no-nested-ternary */
-const path = require('path');
-const { spawnSync } = require('child_process');
+import path from 'path';
+import { spawnSync } from 'child_process';
 
 const hdiffz = path.join(
   __dirname,
@@ -32,4 +32,4 @@ const createDelta = (oldDir, newDir, patchOut) => {
   }
 };
 
-module.exports = createDelta;
+export default createDelta;

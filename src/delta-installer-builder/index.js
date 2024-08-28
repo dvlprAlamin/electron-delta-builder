@@ -1,10 +1,8 @@
 /* eslint-disable no-nested-ternary */
-const fs = require('fs-extra');
-const path = require('path');
-const envPaths = require('env-paths');
-const { extract7zip } = require('../utils');
-
-const { downloadFile, safeSpawn } = require('../utils');
+import fs from "fs-extra";
+import path from "path";
+import envPaths from "env-paths";
+import { downloadFile, safeSpawn, extract7zip } from "../utils"
 
 const defaultOptions = {
   logger: console,
@@ -128,4 +126,4 @@ class DeltaInstallerBuilder {
   }
 }
 
-module.exports = DeltaInstallerBuilder;
+export default DeltaInstallerBuilder

@@ -1,11 +1,8 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable global-require */
-const path = require('path');
-const createAllDeltas = require('./create-all-deltas');
-const {
-  removeExt,
-  fileNameFromUrl,
-} = require('./utils');
+import path from 'path';
+import createAllDeltas from './create-all-deltas';
+import { removeExt, fileNameFromUrl } from './utils';
 
 const macOSBinaries = [
   path.join(__dirname, './mac-updater-binaries/hpatchz'),
@@ -26,7 +23,9 @@ const getLatestReleaseInfo = ({ artifactPaths, platform, target }) => {
     return false;
   })[0];
 
-  const latestReleaseFileName = removeExt(fileNameFromUrl(latestReleaseFilePath));
+  const latestReleaseFileName = removeExt(
+    fileNameFromUrl(latestReleaseFilePath)
+  );
 
   return { latestReleaseFilePath, latestReleaseFileName };
 };
@@ -46,11 +45,13 @@ const DeltaBuilder = {
     const { productName } = options;
     const processName = options.processName || productName;
 
-    const cacheDir = process.env.ELECTRON_DELTA_CACHE
-      || options.cache
-      || path.join(require('os').homedir(), '.electron-delta');
+    const cacheDir =
+      process.env.ELECTRON_DELTA_CACHE ||
+      options.cache ||
+      path.join(require('os').homedir(), '.electron-delta');
 
-    const latestVersion = options.latestVersion || process.env.npm_package_version;
+    const latestVersion =
+      options.latestVersion || process.env.npm_package_version;
     const { getPreviousReleases } = options;
     const buildFiles = [];
 
@@ -63,14 +64,12 @@ const DeltaBuilder = {
         const targets = context.platformToTargets.get(platform);
         const target = targets.entries().next().value[0];
         console.log('Only first target name is taken: ', target);
-        const {
-          latestReleaseFilePath,
-          latestReleaseFileName,
-        } = getLatestReleaseInfo({
-          artifactPaths,
-          platform: platformName,
-          target,
-        });
+        const { latestReleaseFilePath, latestReleaseFileName } =
+          getLatestReleaseInfo({
+            artifactPaths,
+            platform: platformName,
+            target,
+          });
         const deltaInstallerFilesWindows = await createAllDeltas({
           platform: platformName,
           outDir,
@@ -95,14 +94,12 @@ const DeltaBuilder = {
         // create delta for mac
         // for mac zip target is mandatory
         // hence no need to mention the target
-        const {
-          latestReleaseFilePath,
-          latestReleaseFileName,
-        } = getLatestReleaseInfo({
-          artifactPaths,
-          platform: platformName,
-          target: 'zip',
-        });
+        const { latestReleaseFilePath, latestReleaseFileName } =
+          getLatestReleaseInfo({
+            artifactPaths,
+            platform: platformName,
+            target: 'zip',
+          });
         const deltaInstallerFilesMac = await createAllDeltas({
           platform: platformName,
           outDir,
@@ -121,7 +118,10 @@ const DeltaBuilder = {
         if (deltaInstallerFilesMac && deltaInstallerFilesMac.length) {
           buildFiles.push(...deltaInstallerFilesMac);
         }
-        console.log('Adding Macos updater helper binaries ', deltaInstallerFilesMac);
+        console.log(
+          'Adding Macos updater helper binaries ',
+          deltaInstallerFilesMac
+        );
         buildFiles.push(...macOSBinaries);
       }
     }
@@ -130,4 +130,4 @@ const DeltaBuilder = {
   },
 };
 
-module.exports = DeltaBuilder;
+export default DeltaBuilder;

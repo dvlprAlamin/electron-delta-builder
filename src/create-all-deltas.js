@@ -1,15 +1,15 @@
 /* eslint-disable no-console, no-restricted-syntax, no-await-in-loop */
-const path = require('path');
-const fs = require('fs-extra');
-const semverClean = require('semver/functions/clean');
-const DeltaInstallerBuilder = require('./delta-installer-builder');
-const createDelta = require('./delta-installer-builder/create-delta');
-const {
+import path from 'path';
+import fs from 'fs-extra';
+import semverClean from 'semver/functions/clean';
+import DeltaInstallerBuilder from './delta-installer-builder';
+import createDelta from './delta-installer-builder/create-delta';
+import {
   downloadFileIfNotExists,
   extract7zip,
   computeSHA256,
   fileNameFromUrl,
-} = require('./utils');
+} from './utils';
 
 const preparePreviousReleases = (previousReleases) => previousReleases.map((release) => {
   const { url } = release;
@@ -190,4 +190,4 @@ const createAllDeltas = async ({
     .map((fileName) => path.join(outputDir, fileName));
 };
 
-module.exports = createAllDeltas;
+export default createAllDeltas;
